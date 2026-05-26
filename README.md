@@ -1,7 +1,7 @@
 # AI Dev Squad
 
 Multi-agent AI coding platform with an automatic 4-agent chain:
-1. Gemini (`gemini-3.5-flash`) planner
+1. Gemini planner (default via OpenRouter `google/gemini-3.5-flash`, with direct Gemini API fallback)
 2. Groq Qwen (`qwen/qwen-32b`) coder
 3. OpenRouter Nemotron (`nvidia/nemotron-3-super-120b-a12b:free`) reviewer
 4. OpenRouter Owl (`owl/owl-alpha`) fixer
@@ -26,3 +26,7 @@ Backend: http://localhost:4000
 - Download generated project as zip
 - Prompt history persistence
 - Modern dark glassmorphism interface
+
+
+### Optional config
+- `GEMINI_MODEL` (used only for direct Google Gemini fallback if OpenRouter key is unavailable).
