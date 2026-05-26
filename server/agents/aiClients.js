@@ -31,54 +31,27 @@ async function requestWithRetry(url, options, retries = DEFAULT_RETRIES) {
   throw lastError;
 }
 
-export async function callGemini({ apiKey, prompt }) {
+export async function callGemini({ prompt }) {
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const fallbackModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-  if (openRouterKey) {
-    try {
-      const openRouterData = await requestWithRetry('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${openRouterKey}`
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3.5-flash',
-          temperature: 0.2,
-          messages: [{ role: 'user', content: prompt }]
-        })
-      });
-
-      return openRouterData?.choices?.[0]?.message?.content || '';
-    } catch (openRouterError) {
-      if (!apiKey) {
-        throw new Error(
-          `Gemini via OpenRouter failed and no GEMINI_API_KEY is available for fallback. ${openRouterError.message}`
-        );
-      }
-    }
+  if (!openRouterKey) {
+    throw new Error('OPENROUTER_API_KEY is required for Gemini planner via OpenRouter.');
   }
 
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is required for direct Gemini fallback.');
-  }
+  const data = await requestWithRetry('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${openRouterKey}`
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-3.5-flash',
+      temperature: 0.2,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
 
-  const googleData = await requestWithRetry(
-    `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }]
-      })
-    }
-  );
-
-  return googleData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return data?.choices?.[0]?.message?.content || '';
 }
 
 export async function callGroq({ apiKey, prompt }) {
