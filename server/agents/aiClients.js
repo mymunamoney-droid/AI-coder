@@ -31,30 +31,33 @@ async function requestWithRetry(url, options, retries = DEFAULT_RETRIES) {
   throw lastError;
 }
 
-export async function callGemini({ prompt }) {
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-
-  if (!openRouterKey) {
-    throw new Error('OPENROUTER_API_KEY is required for Gemini planner via OpenRouter.');
+export async function callGemini({ apiKey, prompt }) {
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is required for Gemini planner.');
   }
 
-  const data = await requestWithRetry('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openRouterKey}`
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-3.5-flash',
-      temperature: 0.2,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+  const data = await requestWithRetry(
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }]
+      })
+    }
+  );
 
-  return data?.choices?.[0]?.message?.content || '';
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 export async function callGroq({ apiKey, prompt }) {
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY is required for Qwen coder.');
+  }
+
   const data = await requestWithRetry('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -64,6 +67,10 @@ export async function callGroq({ apiKey, prompt }) {
 }
 
 export async function callOpenRouter({ apiKey, model, prompt }) {
+  if (!apiKey) {
+    throw new Error(`OPENROUTER_API_KEY is required for model ${model}.`);
+  }
+
   const data = await requestWithRetry('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
